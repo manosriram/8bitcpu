@@ -2,4 +2,4 @@ run:
 	zig run src/main.zig
 
 test:
-	zig test src/program.zig
+	zig test src/test.zig
