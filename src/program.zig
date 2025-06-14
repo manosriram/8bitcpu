@@ -1,4 +1,5 @@
 const std = @import("std");
+const constants = @import("constants.zig");
 const cpu = @import("cpu.zig").CPU;
 const utils = @import("utils.zig");
 const Allocator = std.mem.Allocator;
@@ -38,15 +39,15 @@ pub const Program = struct {
                         const register = std.mem.trim(u8, splits.items[1], ",");
                         const val = std.mem.trim(u8, splits.items[2], ",");
 
-                        if (self.cpu.InstructionPointer + 3 >= utils.MAX_MEMORY) {
+                        if (self.cpu.InstructionPointer + 3 >= constants.MAX_MEMORY) {
                             std.debug.panic("Memory exceeded 256 bytes", .{});
                             break;
                         }
 
                         if (self.register_vs_opcode.get(val) != null) {
-                            try self.cpu.write_to_memory(@intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_REG));
+                            try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG));
                         } else {
-                            try self.cpu.write_to_memory(@intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
+                            try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
                         }
 
                         if (self.register_vs_opcode.get(register)) |register_opcode| {
@@ -85,11 +86,11 @@ pub const Program = struct {
 
     pub fn run(self: *Program) !void {
         // const instruction = utils.opcode_vs_instruction(0x001).?;
-        while (self.cpu.InstructionPointer < utils.MAX_MEMORY) {
+        while (self.cpu.InstructionPointer < constants.MAX_MEMORY) {
             const instruction = self.cpu.get_next_executable_instruction();
             self.cpu.increment_instruction_pointer();
             switch (instruction) {
-                @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM), @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_REG) => {
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM), @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG) => {
                     const reg = self.cpu.get_next_executable_instruction();
 
                     self.cpu.increment_instruction_pointer();
@@ -97,7 +98,7 @@ pub const Program = struct {
 
                     self.cpu.increment_instruction_pointer();
 
-                    if (instruction == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_REG)) {
+                    if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG)) {
                         self.cpu.set_register(reg, self.cpu.get_register(value));
                     } else {
                         self.cpu.set_register(reg, value);
@@ -124,17 +125,17 @@ test "program:load" {
     var p = Program.new(allocator, "./source.test.asm");
     try p.load();
 
-    try expect(p.cpu.Memory[0] == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
-    try expect(p.cpu.Memory[1] == @intFromEnum(utils.REGISTER_OPCODE.A));
+    try expect(p.cpu.Memory[0] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
+    try expect(p.cpu.Memory[1] == @intFromEnum(constants.REGISTER_OPCODE.A));
     try expect(p.cpu.Memory[2] == 0x1);
 
-    try expect(p.cpu.Memory[3] == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
-    try expect(p.cpu.Memory[4] == @intFromEnum(utils.REGISTER_OPCODE.B));
+    try expect(p.cpu.Memory[3] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
+    try expect(p.cpu.Memory[4] == @intFromEnum(constants.REGISTER_OPCODE.B));
     try expect(p.cpu.Memory[5] == 0x2);
 
-    try expect(p.cpu.Memory[6] == @intFromEnum(utils.INSTRUCTION_OPCODE.CMP));
-    try expect(p.cpu.Memory[7] == @intFromEnum(utils.REGISTER_OPCODE.A));
-    try expect(p.cpu.Memory[8] == @intFromEnum(utils.REGISTER_OPCODE.B));
+    try expect(p.cpu.Memory[6] == @intFromEnum(constants.INSTRUCTION_OPCODE.CMP));
+    try expect(p.cpu.Memory[7] == @intFromEnum(constants.REGISTER_OPCODE.A));
+    try expect(p.cpu.Memory[8] == @intFromEnum(constants.REGISTER_OPCODE.B));
 }
 
 test "program:run" {
