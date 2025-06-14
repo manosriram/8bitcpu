@@ -16,7 +16,18 @@ pub fn initOpcodes() !std.StaticStringMap(u8) {
     return std.StaticStringMap(u8).initComptime(
         .{
             .{ "MOV", 0x01 },
-            .{ "CMP", 0x02 },
+            .{ "CMP", 0x10 },
+        }
+    );
+}
+
+pub fn initRegisterOpcodes() !std.StaticStringMap(u8) {
+    return std.StaticStringMap(u8).initComptime(
+        .{
+            .{ "A", 0x00 },
+            .{ "B", 0x01 },
+            .{ "C", 0x10 },
+            .{ "D", 0x11 },
         }
     );
 }

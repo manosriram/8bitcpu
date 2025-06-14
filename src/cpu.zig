@@ -17,7 +17,7 @@ const Flags = packed struct {
 pub const CPU = struct {
     Register: RegisterPool = .{},
     Memory: [256]u8,
-    InstructionPointer: ?*u8,
+    InstructionPointer: usize,
     Flags: Flags = .{},
     Stack: std.ArrayList(u8),
     StackPtr: ?*u8 = null,
@@ -28,7 +28,7 @@ pub const CPU = struct {
         return .{
             .Stack = std.ArrayList(u8).init(allocator),
             .Allocator = allocator,
-            .InstructionPointer = null,
+            .InstructionPointer = 0,
             .Memory = memory,
         };
     }

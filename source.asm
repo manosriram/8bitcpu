@@ -1,3 +1,3 @@
 MOV A, 1
-MOV B, 1
+MOV B, 10
 CMP A, B
