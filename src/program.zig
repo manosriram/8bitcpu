@@ -4,34 +4,29 @@ const utils = @import("utils.zig");
 const Allocator = std.mem.Allocator;
 
 pub const Program = struct {
+    file_path: []const u8,
     cpu: cpu,
     allocator: Allocator,
     instruction_vs_opcode: std.StaticStringMap(u8),
     register_vs_opcode: std.StaticStringMap(u8),
-    // opcode_vs_instruction: std.AutoHashMap(u8, []const u8),
 
-    pub fn new(allocator: Allocator) Program {
+    pub fn new(allocator: Allocator, file_path: []const u8) Program {
         return .{
+            .file_path = file_path,
             .cpu = cpu.new(allocator),
             .allocator = allocator,
             .instruction_vs_opcode = try utils.instruction_vs_opcode(),
             .register_vs_opcode = try utils.register_vs_opcode(),
-            // .opcode_vs_instruction = try utils.opcode_vs_instruction(allocator),
         };
     }
 
     pub fn load(self: *Program) !void {
-        const file = try std.fs.cwd().openFile("./source.asm", .{});
+        const file = try std.fs.cwd().openFile(self.file_path, .{});
         defer file.close();
 
         var buf_reader = std.io.bufferedReader(file.reader());
         var in_stream = buf_reader.reader();
-
         var file_buffer: [1024]u8 = undefined;
-
-        // const instruction_vs_opcode = 
-        // const register_vs_opcode = try utils.register_vs_opcode();
-        // const opcode_vs_instruction = try utils.opcode_vs_instruction(self.allocator);
 
         while (try in_stream.readUntilDelimiterOrEof(file_buffer[0..], '\n')) |line| {
             const splits = try utils.split(self.allocator, line, " ");
@@ -41,43 +36,32 @@ pub const Program = struct {
                 switch (opcode) {
                     0x1 => { // MOV
                         const register = std.mem.trim(u8, splits.items[1], ",");
-                        const val = splits.items[2];
+                        const val = std.mem.trim(u8, splits.items[2], ",");
 
                         if (self.cpu.InstructionPointer + 3 >= utils.MAX_MEMORY) {
                             std.debug.panic("Memory exceeded 256 bytes", .{});
                             break;
                         }
 
-                        try self.cpu.write_to_memory(0x1);
-                            // std.debug.print("opcode {s}\n", .{register});
+                        if (self.register_vs_opcode.get(val) != null) {
+                            try self.cpu.write_to_memory(@intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_REG));
+                        } else {
+                            try self.cpu.write_to_memory(@intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
+                        }
+
                         if (self.register_vs_opcode.get(register)) |register_opcode| {
-                            std.debug.print("opcode {}", .{register_opcode});
                             try self.cpu.write_to_memory(register_opcode);
                         }
-                        try self.cpu.write_to_memory(try std.fmt.parseInt(u8, val, 10));
 
-                        // if (registerOpcodes.get(register)) |registerOpcode| {
-                        // switch (registerOpcode) {
-                        // 0x00 => {
-                        // c.Register.A = try std.fmt.parseInt(u8, val, 10);
-                        // },
-                        // 0x01 => {
-                        // c.Register.B = try std.fmt.parseInt(u8, val, 10);
-                        // },
-                        // 0x10 => {
-                        // c.Register.C = try std.fmt.parseInt(u8, val, 10);
-                        // },
-                        // 0x11 => {
-                        // c.Register.D = try std.fmt.parseInt(u8, val, 10);
-                        // },
-                        // else => {}
-                        // }
-                        // }
-
-                        std.debug.print("MOV from {s} to {s}\n", .{val, register});
+                        // If val is a register
+                        if (self.register_vs_opcode.get(val)) |register_opcode| {
+                            try self.cpu.write_to_memory(register_opcode);
+                        } else {
+                            try self.cpu.write_to_memory(try std.fmt.parseInt(u8, val, 10));
+                        }
                     },
                     0x2 => { // CMP
-                               // TODO: handle all cmp cases
+                             // TODO: handle all cmp cases
                         const register1 = std.mem.trim(u8, splits.items[1], ",");
                         const register2 = splits.items[2];
                         std.debug.print("CMP {s} to {s}\n", .{register1, register2});
@@ -105,21 +89,23 @@ pub const Program = struct {
             const instruction = self.cpu.get_next_executable_instruction();
             self.cpu.increment_instruction_pointer();
             switch (instruction) {
-                0x1 => {
+                @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM), @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_REG) => {
                     const reg = self.cpu.get_next_executable_instruction();
-                    std.debug.print("mov from {}\n", .{reg});
 
                     self.cpu.increment_instruction_pointer();
                     const value = self.cpu.get_next_executable_instruction();
+
                     self.cpu.increment_instruction_pointer();
 
-                    self.cpu.set_register(reg, value);
-
-                    std.debug.print("register = {}, value = {}\n", .{reg, value});
+                    if (instruction == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_REG)) {
+                        self.cpu.set_register(reg, self.cpu.get_register(value));
+                    } else {
+                        self.cpu.set_register(reg, value);
+                    }
                 },
                 0x2 => {
 
-                },
+            },
                 else => {
                     self.cpu.increment_instruction_pointer();
                 }
@@ -135,14 +121,14 @@ test "program:load" {
     const allocator = std.testing.allocator;
     const expect = std.testing.expect;
 
-    var p = Program.new(allocator);
+    var p = Program.new(allocator, "./source.test.asm");
     try p.load();
 
-    try expect(p.cpu.Memory[0] == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV));
+    try expect(p.cpu.Memory[0] == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
     try expect(p.cpu.Memory[1] == @intFromEnum(utils.REGISTER_OPCODE.A));
     try expect(p.cpu.Memory[2] == 0x1);
 
-    try expect(p.cpu.Memory[3] == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV));
+    try expect(p.cpu.Memory[3] == @intFromEnum(utils.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
     try expect(p.cpu.Memory[4] == @intFromEnum(utils.REGISTER_OPCODE.B));
     try expect(p.cpu.Memory[5] == 0x2);
 
@@ -155,7 +141,7 @@ test "program:run" {
     const allocator = std.testing.allocator;
     const expect = std.testing.expect;
 
-    var p = Program.new(allocator);
+    var p = Program.new(allocator, "./source.test.asm");
     try p.load();
     try p.run();
 

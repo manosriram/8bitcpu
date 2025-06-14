@@ -78,4 +78,18 @@ pub const CPU = struct {
         }
     }
 
+    pub fn get_register(self: *CPU, register_opcode: u8) u8 {
+        const register_str = utils.opcode_vs_register(register_opcode);
+
+        if (std.mem.eql(u8, register_str.?, "A")) {
+            return self.Register.A;
+        } else if (std.mem.eql(u8, register_str.?, "B")) {
+            return self.Register.B;
+        } else if (std.mem.eql(u8, register_str.?, "C")) {
+            return self.Register.C;
+        } else if (std.mem.eql(u8, register_str.?, "D")) {
+            return self.Register.D;
+        }
+        return 0;
+    }
 };

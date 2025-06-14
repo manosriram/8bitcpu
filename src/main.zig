@@ -4,7 +4,7 @@ const Program = @import("program.zig").Program;
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
-    var p = Program.new(gpa.allocator());
+    var p = Program.new(gpa.allocator(), "./source.asm");
     try p.load();
     try p.run();
 }
