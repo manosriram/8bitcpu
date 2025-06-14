@@ -1,4 +1,5 @@
 const std = @import("std");
+const utils = @import("utils.zig");
 const Allocator = std.mem.Allocator;
 
 const RegisterPool = struct {
@@ -42,4 +43,39 @@ pub const CPU = struct {
         _ = self.Stack.pop();
         self.StackPtr = if (self.Stack.items.len > 0) &self.Stack.items[self.Stack.items.len - 1] else null;
     }
+
+    pub fn write_to_memory(self: *CPU, item: u8) !void {
+        self.Memory[self.InstructionPointer] = item;
+        self.InstructionPointer += 1;
+    }
+
+    pub fn get_next_executable_instruction(self: *CPU) u8 {
+        const instruction = self.Memory[self.InstructionPointer];
+        switch (instruction) {
+            0x1, 0x2 => {
+                // TODO: return Instruction
+            },
+            else => {}
+        }
+        return instruction;
+    }
+
+    pub fn increment_instruction_pointer(self: *CPU) void {
+        self.InstructionPointer += 1;
+    }
+
+    pub fn set_register(self: *CPU, register_opcode: u8, value: u8) void {
+        const register_str = utils.opcode_vs_register(register_opcode);
+
+        if (std.mem.eql(u8, register_str.?, "A")) {
+            self.Register.A = value;
+        } else if (std.mem.eql(u8, register_str.?, "B")) {
+            self.Register.B = value;
+        } else if (std.mem.eql(u8, register_str.?, "C")) {
+            self.Register.C = value;
+        } else if (std.mem.eql(u8, register_str.?, "D")) {
+            self.Register.D = value;
+        }
+    }
+
 };

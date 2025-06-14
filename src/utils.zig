@@ -1,5 +1,23 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
+const Allocator = std.mem.Allocator;
+
+pub const MAX_MEMORY = 0x100; // 256 bytes
+
+pub const INSTRUCTION_OPCODE = enum(u8) {
+    MOV = 0x1,
+    CMP = 0x2,
+};
+
+pub const REGISTER_OPCODE = enum(u8) {
+    A = 0x0,
+    B = 0x1,
+    C = 0x2,
+    D = 0x3,
+};
+
+pub const MOV_OPCODE = 0x1;
+pub const CMP_OPCODE = 0x2;
 
 pub fn split(allocator: std.mem.Allocator, input: []const u8, delimiter: []const u8) !ArrayList([]const u8) {
     var parts = std.ArrayList([]const u8).init(allocator);
@@ -12,22 +30,45 @@ pub fn split(allocator: std.mem.Allocator, input: []const u8, delimiter: []const
     return parts;
 }
 
-pub fn initOpcodes() !std.StaticStringMap(u8) {
+pub fn instruction_vs_opcode() !std.StaticStringMap(u8) {
     return std.StaticStringMap(u8).initComptime(
         .{
-            .{ "MOV", 0x01 },
-            .{ "CMP", 0x10 },
+            .{ "MOV", MOV_OPCODE },
+            .{ "CMP", CMP_OPCODE },
+        }
+    );
+
+}
+
+pub fn opcode_vs_instruction(opcode: u8) ?[]const u8 {
+    return switch (opcode) {
+        0x1 => "MOV",
+        0x2 => "CMP",
+        else => ""
+    };
+    // var map = std.AutoHashMap(u8, []const u8).init(allocator);
+    // try map.put(MOV_OPCODE, "MOV");
+    // try map.put(CMP_OPCODE, "CMP");
+    // return map;
+}
+
+pub fn register_vs_opcode() !std.StaticStringMap(u8) {
+    return std.StaticStringMap(u8).initComptime(
+        .{
+            .{ "A", 0x0 },
+            .{ "B", 0x1 },
+            .{ "C", 0x2 },
+            .{ "D", 0x3 },
         }
     );
 }
 
-pub fn initRegisterOpcodes() !std.StaticStringMap(u8) {
-    return std.StaticStringMap(u8).initComptime(
-        .{
-            .{ "A", 0x00 },
-            .{ "B", 0x01 },
-            .{ "C", 0x10 },
-            .{ "D", 0x11 },
-        }
-    );
+pub fn opcode_vs_register(opcode: u8) ?[]const u8 {
+    return switch (opcode) {
+        0x0 => "A",
+        0x1 => "B",
+        0x2 => "C",
+        0x3 => "D",
+        else => ""
+    };
 }
