@@ -19,6 +19,7 @@ pub fn instruction_vs_opcode() !std.StaticStringMap(u8) {
         .{
             .{ "MOV", @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM) },
             .{ "CMP", @intFromEnum(constants.INSTRUCTION_OPCODE.CMP) },
+            .{ "HLT", @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) },
         }
     );
 
@@ -26,8 +27,9 @@ pub fn instruction_vs_opcode() !std.StaticStringMap(u8) {
 
 pub fn opcode_vs_instruction(opcode: u8) ?[]const u8 {
     return switch (opcode) {
-        0x1 => "MOV",
+        0x1, 0x3 => "MOV",
         0x2 => "CMP",
+        0x4 => "HLT",
         else => ""
     };
 }

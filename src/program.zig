@@ -58,22 +58,26 @@ pub const Program = struct {
                         if (self.register_vs_opcode.get(val)) |register_opcode| {
                             try self.cpu.write_to_memory(register_opcode);
                         } else {
+                            // TODO: handler [reg] and other cases
                             try self.cpu.write_to_memory(try std.fmt.parseInt(u8, val, 10));
                         }
                     },
                     0x2 => { // CMP
-                             // TODO: handle all cmp cases
+                        // TODO: handle all cmp cases
                         const register1 = std.mem.trim(u8, splits.items[1], ",");
                         const register2 = splits.items[2];
-                        std.debug.print("CMP {s} to {s}\n", .{register1, register2});
+                        // std.debug.print("CMP {s} to {s}\n", .{register1, register2});
 
-                        try self.cpu.write_to_memory(0x2);
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP));
                         if (self.register_vs_opcode.get(register1)) |registerOpcode| {
                             try self.cpu.write_to_memory(registerOpcode);
                         }
                         if (self.register_vs_opcode.get(register2)) |registerOpcode| {
                             try self.cpu.write_to_memory(registerOpcode);
                         }
+                    },
+                    @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) => {
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.HLT));
                     },
                     else => {
 
@@ -106,14 +110,19 @@ pub const Program = struct {
                 },
                 0x2 => {
 
-            },
+                },
+                @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) => {
+                    return;
+                },
                 else => {
                     self.cpu.increment_instruction_pointer();
                 }
             }
         }
-        std.debug.print("memory -> {any}\n", .{self.cpu.Memory});
-        std.debug.print("registers -> {any}\n", .{self.cpu.Register});
+    }
+
+    pub fn deinit(self: *Program) void {
+        self.cpu.Stack.deinit();
     }
 };
 

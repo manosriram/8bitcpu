@@ -4,6 +4,7 @@ pub const INSTRUCTION_OPCODE = enum(u8) {
     MOV_REG_TO_IMM = 0x1,
     CMP = 0x2,
     MOV_REG_TO_REG = 0x3,
+    HLT = 0x4,
 };
 
 pub const REGISTER_OPCODE = enum(u8) {

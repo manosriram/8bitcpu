@@ -1,5 +1,5 @@
-; Registers A, B, C, D
 ; Memory 256 bytes
-MOV A, 1
+; Registers A, B, C, D
+MOV A, 5
 MOV B, A
 CMP A, B
