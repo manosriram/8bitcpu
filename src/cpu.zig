@@ -25,8 +25,7 @@ pub const CPU = struct {
     Allocator: Allocator,
 
     pub fn new(allocator: Allocator) CPU {
-        var memory = std.mem.zeroes([256]u8);
-        memory[100] = 111;
+        const memory = std.mem.zeroes([256]u8);
         return .{
             .Stack = std.ArrayList(u8).init(allocator),
             .Allocator = allocator,
