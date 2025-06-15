@@ -36,16 +36,28 @@ pub const Program = struct {
             if (self.instruction_vs_opcode.get(splits.items[0])) |opcode| {
                 switch (opcode) {
                     0x1 => { // MOV
+
+                        // MOV reg, reg
+                        // MOV reg, address
+                        // MOV reg, constant
+                        // MOV address, reg
+                        // MOV address, constant
+
                         const register = std.mem.trim(u8, splits.items[1], ",");
-                        const val = std.mem.trim(u8, splits.items[2], ",");
+                        var val = std.mem.trim(u8, splits.items[2], ",");
 
                         if (self.cpu.InstructionPointer + 3 >= constants.MAX_MEMORY) {
                             std.debug.panic("Memory exceeded 256 bytes", .{});
                             break;
                         }
 
+                        std.debug.print("val = {any}\n", .{val});
                         if (self.register_vs_opcode.get(val) != null) {
                             try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG));
+                        } else if (std.mem.startsWith(u8, val, "[") and std.mem.endsWith(u8, val, "]")) {
+                            try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR));
+                            val = val[1..val.len-1];
+                            std.debug.print("got addr\n", .{});
                         } else {
                             try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
                         }
@@ -94,7 +106,7 @@ pub const Program = struct {
             const instruction = self.cpu.get_next_executable_instruction();
             self.cpu.increment_instruction_pointer();
             switch (instruction) {
-                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM), @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG) => {
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM), @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG), @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR) => {
                     const reg = self.cpu.get_next_executable_instruction();
 
                     self.cpu.increment_instruction_pointer();
@@ -104,6 +116,8 @@ pub const Program = struct {
 
                     if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG)) {
                         self.cpu.set_register(reg, self.cpu.get_register(value));
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR)) {
+                        self.cpu.set_register(reg, self.cpu.Memory[self.cpu.get_register(value)]);
                     } else {
                         self.cpu.set_register(reg, value);
                     }
