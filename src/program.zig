@@ -178,7 +178,7 @@ pub const Program = struct {
                     } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER)) {
                         self.cpu.set_register(dest, src);
                     } else {
-                        std.debug.print("aa {}", .{instruction});
+                        std.debug.panic("Unknown instruction\n", .{});
                     }
                 },
                 @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) => {
