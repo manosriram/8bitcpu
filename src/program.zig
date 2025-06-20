@@ -129,7 +129,7 @@ pub const Program = struct {
                     @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.CMP) => { // CMP
                         // TODO: handle all cmp cases
                         const register1 = std.mem.trim(u8, splits.items[1], ",");
-                        const register2 = splits.items[2];
+                        const register2 = std.mem.trim(u8, splits.items[2], ",");
 
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP));
                         if (self.register_vs_opcode.get(register1)) |registerOpcode| {
@@ -181,6 +181,19 @@ pub const Program = struct {
                         std.debug.panic("Unknown instruction\n", .{});
                     }
                 },
+                @intFromEnum(constants.INSTRUCTION_OPCODE.CMP) => {
+                    const register1_val = self.cpu.get_register(self.cpu.get_next_executable_instruction());
+                    self.cpu.increment_instruction_pointer();
+
+                    const register2_val = self.cpu.get_register(self.cpu.get_next_executable_instruction());
+                    self.cpu.increment_instruction_pointer();
+
+                    if (register1_val < register2_val) {
+                        self.cpu.set_carry_flag();
+                    } else if (register1_val == register2_val) {
+                        self.cpu.set_zero_flag();
+                    }
+                },
                 @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) => {
                     return;
                 },
@@ -196,8 +209,7 @@ pub const Program = struct {
     }
 };
 
-
-test "program:load" {
+test "program:load:MOV" {
     const allocator = std.testing.allocator;
     const expect = std.testing.expect;
 
@@ -211,13 +223,21 @@ test "program:load" {
     try expect(p.cpu.Memory[3] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER));
     try expect(p.cpu.Memory[4] == @intFromEnum(constants.REGISTER_OPCODE.B));
     try expect(p.cpu.Memory[5] == 0x2);
+}
+
+test "program:load:CMP" {
+    const allocator = std.testing.allocator;
+    const expect = std.testing.expect;
+
+    var p = Program.new(allocator, "./source.test.asm");
+    try p.load();
 
     try expect(p.cpu.Memory[6] == @intFromEnum(constants.INSTRUCTION_OPCODE.CMP));
     try expect(p.cpu.Memory[7] == @intFromEnum(constants.REGISTER_OPCODE.A));
     try expect(p.cpu.Memory[8] == @intFromEnum(constants.REGISTER_OPCODE.B));
 }
 
-test "program:run" {
+test "program:run:MOV" {
     const allocator = std.testing.allocator;
     const expect = std.testing.expect;
 
@@ -229,4 +249,17 @@ test "program:run" {
     try expect(p.cpu.Register.B == 2);
     try expect(p.cpu.Register.C == 0);
     try expect(p.cpu.Register.D == 0);
+}
+
+test "program:run:CMP" {
+    const allocator = std.testing.allocator;
+    const expect = std.testing.expect;
+
+    var p = Program.new(allocator, "./source.test.asm");
+    try p.load();
+    try p.run();
+
+    try expect(p.cpu.Flags.carry == true);
+    try expect(p.cpu.Flags.zero == false);
+    try expect(p.cpu.Flags.fault == false);
 }

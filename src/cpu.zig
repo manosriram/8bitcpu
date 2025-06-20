@@ -93,4 +93,12 @@ pub const CPU = struct {
         }
         return 0;
     }
+
+    pub fn set_carry_flag(self: *CPU) void {
+        self.Flags.carry = true;
+    }
+
+    pub fn set_zero_flag(self: *CPU) void {
+        self.Flags.zero = true;
+    }
 };

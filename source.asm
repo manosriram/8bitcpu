@@ -4,3 +4,6 @@ MOV A, 10
 MOV C, 255
 MOV [C], A
 MOV D, [C]
+MOV B, 100
+MOV D, B
+CMP A, D
