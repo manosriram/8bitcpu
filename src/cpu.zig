@@ -1,5 +1,6 @@
 const std = @import("std");
 const utils = @import("utils.zig");
+const constants = @import("constants.zig");
 const Allocator = std.mem.Allocator;
 
 const RegisterPool = struct {

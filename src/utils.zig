@@ -17,9 +17,9 @@ pub fn split(allocator: std.mem.Allocator, input: []const u8, delimiter: []const
 pub fn instruction_vs_opcode() !std.StaticStringMap(u8) {
     return std.StaticStringMap(u8).initComptime(
         .{
-            .{ "MOV", @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM) },
-            .{ "CMP", @intFromEnum(constants.INSTRUCTION_OPCODE.CMP) },
-            .{ "HLT", @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) },
+            .{ "MOV", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.MOV) },
+            .{ "CMP", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.CMP) },
+            .{ "HLT", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.HLT) },
         }
     );
 

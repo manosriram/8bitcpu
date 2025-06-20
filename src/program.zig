@@ -44,8 +44,7 @@ pub const Program = struct {
 
             if (self.instruction_vs_opcode.get(splits.items[0])) |opcode| {
                 switch (opcode) {
-                    0x1 => { // MOV
-
+                    @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.MOV) => { // MOV
                         // MOV reg, reg
                         // MOV reg, address
                         // MOV reg, constant
@@ -57,80 +56,80 @@ pub const Program = struct {
                             break;
                         }
 
-                        var register = std.mem.trim(u8, splits.items[1], ",");
-                        var val = std.mem.trim(u8, splits.items[2], ",");
+                        var dest = std.mem.trim(u8, splits.items[1], ",");
+                        var src = std.mem.trim(u8, splits.items[2], ",");
 
-                        // const zz = self.reg_or_address_or_constant(register);
+                        const dest_type = self.reg_or_address_or_constant(dest);
+                        const src_type = self.reg_or_address_or_constant(src);
 
-                        var fl: u8 = 0x10;
-                        if (self.reg_or_address_or_constant(register) == constants.OPERANDS.REGISTER) {
-                            fl >>= 1;
-                        } else if (self.reg_or_address_or_constant(register) == constants.OPERANDS.ADDRESS) {
-                            fl >>= 2;
-                            register = register[1..register.len-1];
-                        }
+                        switch (dest_type) {
+                            constants.OPERANDS.REGISTER => switch (src_type) {
+                                // reg reg
+                                constants.OPERANDS.REGISTER => {
+                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REGISTER_TO_REGISTER));
+                                    if (self.register_vs_opcode.get(dest)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                    if (self.register_vs_opcode.get(src)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                },
 
-                        // switch (self.reg_or_address_or_constant(register)) {
-                            // constants.OPERANDS.REGISTER => {
-                                // // try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG));
-                            // },
-                            // constants.OPERANDS.ADDRESS => {
-                                // fl >>= 2;
-                                // // try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR));
-                                // // std.debug.print("got addr\n", .{});
-                            // },
-                            // else => {}
-                        // }
-                        std.debug.print("fl = {}\n", .{fl});
-                        switch (self.reg_or_address_or_constant(val)) {
-                            constants.OPERANDS.REGISTER => {
-                                if (fl == 0x08) {
-                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG));
-                                } else {
-                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDR_TO_REG));
-                                }
+                                // reg addr
+                                constants.OPERANDS.ADDRESS => {
+                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDRESS_TO_REGISTER));
+                                    src = src[1..src.len-1];
+                                    // try self.cpu.write_to_memory(register_opcode);
+                                    if (self.register_vs_opcode.get(dest)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                    if (self.register_vs_opcode.get(src)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                },
+
+                                // reg imm
+                                constants.OPERANDS.IMMEDIATE => {
+                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER));
+                                    if (self.register_vs_opcode.get(dest)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                    try self.cpu.write_to_memory(try std.fmt.parseInt(u8, src, 10));
+                                },
                             },
-                            constants.OPERANDS.ADDRESS => {
-                                try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR));
-                                val = val[1..val.len-1];
-                                std.debug.print("got addr\n", .{});
+                            constants.OPERANDS.ADDRESS => switch (src_type) {
+                                // addr reg
+                                constants.OPERANDS.REGISTER => {
+                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REGISTER_TO_ADDRESS));
+                                    dest = dest[1..dest.len-1];
+
+                                    if (self.register_vs_opcode.get(dest)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                    if (self.register_vs_opcode.get(src)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                },
+
+                                // addr imm
+                                constants.OPERANDS.IMMEDIATE => {
+                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_ADDRESS));
+                                    dest = dest[1..dest.len-1];
+
+                                    if (self.register_vs_opcode.get(dest)) |register_opcode| {
+                                        try self.cpu.write_to_memory(register_opcode);
+                                    }
+                                    try self.cpu.write_to_memory(try std.fmt.parseInt(u8, src, 10));
+                                },
+                                else => {}
                             },
-                            constants.OPERANDS.IMMEDIATE => {
-                                if (fl == 0x08) {
-                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
-                                } else {
-                                    try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDR_TO_IMM));
-                                }
-                            },
-                        }
-
-
-                        // if (utils.reg_or_address_or_constant(register) == constants.OPERANDS.REGISTER) {
-                        // }
-
-                        // std.debug.print("val = {any}\n", .{val});
-                        // if (self.register_vs_opcode.get(val) != null) {
-                        // } else if (std.mem.startsWith(u8, val, "[") and std.mem.endsWith(u8, val, "]")) {
-                        // } else {
-                        // }
-
-                        if (self.register_vs_opcode.get(register)) |register_opcode| {
-                            try self.cpu.write_to_memory(register_opcode);
-                        }
-
-                        // If val is a register
-                        if (self.register_vs_opcode.get(val)) |register_opcode| {
-                            try self.cpu.write_to_memory(register_opcode);
-                        } else {
-                            // TODO: handler [reg] and other cases
-                            try self.cpu.write_to_memory(try std.fmt.parseInt(u8, val, 10));
+                            else => {}
                         }
                     },
-                    0x2 => { // CMP
+                    @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.CMP) => { // CMP
                         // TODO: handle all cmp cases
                         const register1 = std.mem.trim(u8, splits.items[1], ",");
                         const register2 = splits.items[2];
-                        // std.debug.print("CMP {s} to {s}\n", .{register1, register2});
 
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP));
                         if (self.register_vs_opcode.get(register1)) |registerOpcode| {
@@ -140,7 +139,7 @@ pub const Program = struct {
                             try self.cpu.write_to_memory(registerOpcode);
                         }
                     },
-                    @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) => {
+                    @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.HLT) => {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.HLT));
                     },
                     else => {
@@ -153,37 +152,34 @@ pub const Program = struct {
     }
 
     pub fn run(self: *Program) !void {
-        // const instruction = utils.opcode_vs_instruction(0x001).?;
         while (self.cpu.InstructionPointer < constants.MAX_MEMORY) {
             const instruction = self.cpu.get_next_executable_instruction();
             self.cpu.increment_instruction_pointer();
             switch (instruction) {
-                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM), @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG), @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR) => {
-                    const reg = self.cpu.get_next_executable_instruction();
-
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REGISTER_TO_REGISTER),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDRESS_TO_REGISTER),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REGISTER_TO_ADDRESS),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_ADDRESS) => {
+                    const dest = self.cpu.get_next_executable_instruction();
                     self.cpu.increment_instruction_pointer();
-                    const value = self.cpu.get_next_executable_instruction();
 
+                    const src = self.cpu.get_next_executable_instruction();
                     self.cpu.increment_instruction_pointer();
 
-                    if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_REG)) {
-                        self.cpu.set_register(reg, self.cpu.get_register(value));
-                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_ADDR)) {
-                        self.cpu.set_register(reg, self.cpu.Memory[self.cpu.get_register(value)]);
-                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDR_TO_REG)) {
-
-                        // self.cpu.Memory[self
-
-                        // self.cpu.set_register(reg, self.cpu.Memory[self.cpu.get_register(value)]);
-
-                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDR_TO_IMM)) {
-                        self.cpu.set_register(self.cpu.Memory[self.cpu.get_register(reg)], value);
+                    if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REGISTER_TO_REGISTER)) {
+                        self.cpu.set_register(dest, self.cpu.get_register(src));
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REGISTER_TO_ADDRESS)) {
+                        self.cpu.Memory[self.cpu.get_register(dest)] = self.cpu.get_register(src);
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_ADDRESS_TO_REGISTER)) {
+                        self.cpu.set_register(dest, self.cpu.Memory[self.cpu.get_register(src)]);
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_ADDRESS)) {
+                        self.cpu.set_register(self.cpu.Memory[self.cpu.get_register(dest)], src);
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER)) {
+                        self.cpu.set_register(dest, src);
                     } else {
-                        self.cpu.set_register(reg, value);
+                        std.debug.print("aa {}", .{instruction});
                     }
-                },
-                0x2 => {
-
                 },
                 @intFromEnum(constants.INSTRUCTION_OPCODE.HLT) => {
                     return;
@@ -208,11 +204,11 @@ test "program:load" {
     var p = Program.new(allocator, "./source.test.asm");
     try p.load();
 
-    try expect(p.cpu.Memory[0] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
+    try expect(p.cpu.Memory[0] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER));
     try expect(p.cpu.Memory[1] == @intFromEnum(constants.REGISTER_OPCODE.A));
     try expect(p.cpu.Memory[2] == 0x1);
 
-    try expect(p.cpu.Memory[3] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_REG_TO_IMM));
+    try expect(p.cpu.Memory[3] == @intFromEnum(constants.INSTRUCTION_OPCODE.MOV_IMMEDIATE_TO_REGISTER));
     try expect(p.cpu.Memory[4] == @intFromEnum(constants.REGISTER_OPCODE.B));
     try expect(p.cpu.Memory[5] == 0x2);
 
