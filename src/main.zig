@@ -9,9 +9,6 @@ pub fn main() !void {
     try p.load();
     try p.run();
 
-    const x = 10;
-    std.debug.print("p = {}\n", .{x});
-
     std.debug.print("memory -> {any}\n", .{p.cpu.Memory});
     std.debug.print("registers -> {any}\n", .{p.cpu.Register});
     std.debug.print("flags -> {any}\n", .{p.cpu.Flags});

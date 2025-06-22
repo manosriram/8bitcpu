@@ -51,6 +51,9 @@ pub const CPU = struct {
     }
 
     pub fn get_next_executable_instruction(self: *CPU) u8 {
+        if (self.InstructionPointer > 255) {
+            return 0;
+        }
         const instruction = self.Memory[self.InstructionPointer];
         switch (instruction) {
             0x1, 0x2 => {
