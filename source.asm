@@ -13,4 +13,4 @@
 MOV A, 10
 MOV C, 254
 MOV [C], A
-ADD [C], 1
+SUB [C], 1

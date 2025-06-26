@@ -22,6 +22,7 @@ pub fn instruction_vs_opcode() !std.StaticStringMap(u8) {
             .{ "CMP", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.CMP) },
             .{ "HLT", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.HLT) },
             .{ "ADD", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) },
+            .{ "SUB", @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) },
         }
     );
 
@@ -33,6 +34,7 @@ pub fn opcode_vs_instruction(opcode: u8) ?[]const u8 {
         0x2 => "CMP",
         0x4 => "HLT",
         0x5 => "ADD",
+        0x6 => "SUB",
         else => ""
     };
 }

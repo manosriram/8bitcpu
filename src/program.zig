@@ -48,6 +48,8 @@ pub const Program = struct {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP_REGISTER_TO_REGISTER));
                     } else if (instruction_type == constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.ADD_REGISTER_TO_REGISTER));
+                    } else if (instruction_type == constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) {
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.SUB_REGISTER_TO_REGISTER));
                     }
 
                     if (self.register_vs_opcode.get(dest)) |register_opcode| {
@@ -66,6 +68,8 @@ pub const Program = struct {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP_ADDRESS_TO_REGISTER));
                     } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.ADD_ADDRESS_TO_REGISTER));
+                    } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) {
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.SUB_ADDRESS_TO_REGISTER));
                     }
 
                     src = src[1..src.len-1];
@@ -85,6 +89,8 @@ pub const Program = struct {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP_IMMEDIATE_TO_REGISTER));
                     } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.ADD_IMMEDIATE_TO_REGISTER));
+                    } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) {
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.SUB_IMMEDIATE_TO_REGISTER));
                     }
 
                     if (self.register_vs_opcode.get(dest)) |register_opcode| {
@@ -102,6 +108,8 @@ pub const Program = struct {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP_REGISTER_TO_ADDRESS));
                     } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.ADD_REGISTER_TO_ADDRESS));
+                    } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) {
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.SUB_REGISTER_TO_ADDRESS));
                     }
 
                     dest = dest[1..dest.len-1];
@@ -121,6 +129,8 @@ pub const Program = struct {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.CMP_IMMEDIATE_TO_ADDRESS));
                     } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) {
                         try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.ADD_IMMEDIATE_TO_ADDRESS));
+                    } else if (instruction_type ==  constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) {
+                        try self.cpu.write_to_memory(@intFromEnum(constants.INSTRUCTION_OPCODE.SUB_IMMEDIATE_TO_ADDRESS));
                     }
 
                     dest = dest[1..dest.len-1];
@@ -205,6 +215,9 @@ pub const Program = struct {
                     },
                     @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD) => {
                         try self.handle_instruction_memory_write(splits, constants.ABSOLUTE_INSTRUCTION_OPCODE.ADD);
+                    },
+                    @intFromEnum(constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB) => {
+                        try self.handle_instruction_memory_write(splits, constants.ABSOLUTE_INSTRUCTION_OPCODE.SUB);
                     },
                     else => {
 
@@ -302,6 +315,35 @@ pub const Program = struct {
                         self.cpu.Memory[self.cpu.get_register(dest)] += src;
                     } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.ADD_IMMEDIATE_TO_REGISTER)) {
                         self.cpu.set_register(dest, src + self.cpu.get_register(dest));
+                    } else {
+                        std.debug.panic("Unknown instruction\n", .{});
+                    }
+                    // std.debug.print("dest = {}, src = {}\n", .{dest, src});
+
+                    if (dest < src) {
+                        self.cpu.set_carry_flag();
+                    } else if (dest == src) {
+                        self.cpu.set_zero_flag();
+                    }
+                },
+                @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_IMMEDIATE_TO_REGISTER),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_REGISTER_TO_REGISTER),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_ADDRESS_TO_REGISTER),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_REGISTER_TO_ADDRESS),
+                @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_IMMEDIATE_TO_ADDRESS) => {
+                    const dest = self.cpu.get_next_executable_instruction();
+                    self.cpu.increment_instruction_pointer();
+                    const src = self.cpu.get_next_executable_instruction();
+                    self.cpu.increment_instruction_pointer();
+
+                    if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_REGISTER_TO_REGISTER)) {
+                        self.cpu.set_register(dest, self.cpu.get_register(dest) - self.cpu.get_register(src));
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_REGISTER_TO_ADDRESS)) {
+                        self.cpu.Memory[self.cpu.get_register(dest)] -= self.cpu.get_register(src);
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_IMMEDIATE_TO_ADDRESS)) {
+                        self.cpu.Memory[self.cpu.get_register(dest)] -= src;
+                    } else if (instruction == @intFromEnum(constants.INSTRUCTION_OPCODE.SUB_IMMEDIATE_TO_REGISTER)) {
+                        self.cpu.set_register(dest, src - self.cpu.get_register(dest));
                     } else {
                         std.debug.panic("Unknown instruction\n", .{});
                     }

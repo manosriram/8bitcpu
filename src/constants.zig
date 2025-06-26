@@ -21,7 +21,13 @@ pub const INSTRUCTION_OPCODE = enum(u8) {
     ADD_REGISTER_TO_ADDRESS = 0x0E,
     ADD_IMMEDIATE_TO_ADDRESS = 0x0F,
 
-    HLT = 0x10,
+    SUB_REGISTER_TO_REGISTER = 0x1A,
+    SUB_ADDRESS_TO_REGISTER = 0x1B,
+    SUB_IMMEDIATE_TO_REGISTER = 0x1C,
+    SUB_REGISTER_TO_ADDRESS = 0x1D,
+    SUB_IMMEDIATE_TO_ADDRESS = 0x1E,
+
+    HLT = 0x1F,
 };
 
 pub const ABSOLUTE_INSTRUCTION_OPCODE = enum(u8) {
@@ -29,6 +35,7 @@ pub const ABSOLUTE_INSTRUCTION_OPCODE = enum(u8) {
     CMP = 0x2,
     HLT = 0x3,
     ADD = 0x4,
+    SUB = 0x5,
 };
 
 pub const REGISTER_OPCODE = enum(u8) {
